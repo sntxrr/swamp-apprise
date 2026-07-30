@@ -1,0 +1,22 @@
+manifestVersion: 1
+
+name: "@sntxrr/apprise-notify"
+version: "2026.07.30.1"
+description: "Send notifications through an Apprise API server, fanning out to Matrix, Discord, ntfy, email and 100+ other services"
+repository: "https://github.com/sntxrr/swamp-apprise"
+
+models:
+  - apprise_notify.ts
+
+additionalFiles:
+  - README.md
+  - LICENSE.md
+
+labels:
+  - apprise
+  - notifications
+  - matrix
+  - discord
+  - ntfy
+  - homelab
+  - alerting
