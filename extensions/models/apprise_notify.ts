@@ -34,8 +34,11 @@ const GlobalArgsSchema = z.object({
   configKey: z.string().optional().describe(
     "Persistent config key to notify (POST /notify/<key>). Omit to use stateless mode, which requires `urls`.",
   ),
-  urls: z.string().optional().describe(
-    "Stateless mode: comma-separated Apprise URLs to notify directly (POST /notify). Ignored when configKey is set.",
+  // Sensitive because Apprise URLs embed credentials in their userinfo —
+  // matrixs://user:token@host/room. configKey mode carries no secret at all,
+  // which is the better reason to prefer it.
+  urls: z.string().optional().meta({ sensitive: true }).describe(
+    "Stateless mode: comma-separated Apprise URLs to notify directly (POST /notify). Ignored when configKey is set. Embeds credentials — supply via vault.get().",
   ),
   defaultTags: z.string().optional().describe(
     "Comma-separated tags applied when a notify call does not specify its own. Must match tags on the configured URLs or nothing is sent.",
