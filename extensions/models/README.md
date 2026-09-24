@@ -16,8 +16,8 @@ swamp model create @sntxrr/apprise-notify apprise
 
 ```yaml
 globalArguments:
-  apiUrl: 'http://apprise:8000'
-  configKey: homelab          # a stored config on the Apprise server
+  apiUrl: "http://apprise:8000"
+  configKey: homelab # a stored config on the Apprise server
   defaultTags: homelab
 ```
 
@@ -28,19 +28,40 @@ swamp model @sntxrr/apprise-notify method run notify apprise \
 
 ## Arguments
 
-| Argument | Default | Notes |
-| --- | --- | --- |
-| `title` | — | Required |
-| `body` | — | Required; honours `format` |
-| `type` | `info` | `info` / `success` / `warning` / `failure` |
-| `tags` | `defaultTags` | Comma-separated; selects which configured URLs fire |
-| `format` | `text` | `text` / `markdown` / `html` |
-| `when` | `true` | Send only when true — see below |
+| Argument | Default                                | Notes                                               |
+| -------- | -------------------------------------- | --------------------------------------------------- |
+| `title`  | —                                      | Required                                            |
+| `body`   | —                                      | Required; honours `format`                          |
+| `type`   | `info`                                 | `info` / `success` / `warning` / `failure`          |
+| `tags`   | `tagsByType[type]`, then `defaultTags` | Comma-separated; selects which configured URLs fire |
+| `format` | `text`                                 | `text` / `markdown` / `html`                        |
+| `when`   | `true`                                 | Send only when true — see below                     |
+
+## Routing by type: `tagsByType`
+
+Apprise routes on tags, not on `type`, so failures and successes sent with the
+same tags land in the same place. `tagsByType` maps each type to its own tags on
+the model, so every step routes correctly without passing `tags`:
+
+```yaml
+globalArguments:
+  apiUrl: "http://apprise:8000"
+  configKey: homelab
+  defaultTags: homelab
+  tagsByType:
+    failure: homelab,alert
+    warning: homelab,alert
+    success: homelab,done
+    info: homelab,done
+```
+
+Precedence is the step's `tags`, then `tagsByType[type]`, then `defaultTags`. A
+type left out of the mapping falls back to `defaultTags`.
 
 ## `when`, and why it exists
 
 Swamp workflows cannot branch on data. A step's `dependsOn.condition`
-understands dependency *state* only — `succeeded`, `failed`, `skipped`,
+understands dependency _state_ only — `succeeded`, `failed`, `skipped`,
 `always`, and boolean combinations — so there is no way to write "notify only if
 the previous step changed something".
 
@@ -98,5 +119,5 @@ visible in the run.
 ## Timeouts
 
 Apprise contacts third-party services synchronously, so a dead target can hang
-the request. `timeoutMs` (default 10000) bounds it; a notification must never
-be what stalls a workflow.
+the request. `timeoutMs` (default 10000) bounds it; a notification must never be
+what stalls a workflow.

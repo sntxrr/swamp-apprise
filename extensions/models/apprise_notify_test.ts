@@ -205,7 +205,10 @@ Deno.test("credentials in an echoed error body are redacted", async () => {
 });
 
 Deno.test("a trailing slash on apiUrl does not produce a double slash", async () => {
-  const { context } = notifyContext({ ...GLOBAL_ARGS, apiUrl: "http://apprise:8000/" });
+  const { context } = notifyContext({
+    ...GLOBAL_ARGS,
+    apiUrl: "http://apprise:8000/",
+  });
   const { handler, seen } = capture(200);
 
   await withMockedFetch(handler, async () => {
@@ -213,4 +216,58 @@ Deno.test("a trailing slash on apiUrl does not produce a double slash", async ()
   });
 
   assertEquals(seen[0].url, "http://apprise:8000/notify/homelab");
+});
+
+const BY_TYPE = {
+  ...GLOBAL_ARGS,
+  tagsByType: { failure: "homelab,alert", success: "homelab,done" },
+};
+
+for (
+  const [type, want] of [
+    ["failure", "homelab,alert"],
+    ["success", "homelab,done"],
+    ["warning", "homelab"], // unmapped: falls back to defaultTags
+    ["info", "homelab"],
+  ] as const
+) {
+  Deno.test(`tagsByType routes type=${type} to "${want}"`, async () => {
+    const { context, getWrittenResources } = notifyContext(BY_TYPE);
+    const { handler, seen } = capture(200);
+
+    await withMockedFetch(handler, async () => {
+      await model.methods.notify.execute({ ...ARGS, type }, context);
+    });
+
+    assertEquals((seen[0].payload as Record<string, unknown>).tag, want);
+    assertEquals(getWrittenResources()[0].data.tags, want);
+  });
+}
+
+Deno.test("explicit tags override tagsByType", async () => {
+  const { context } = notifyContext(BY_TYPE);
+  const { handler, seen } = capture(200);
+
+  await withMockedFetch(handler, async () => {
+    await model.methods.notify.execute(
+      { ...ARGS, type: "failure", tags: "custom" },
+      context,
+    );
+  });
+
+  assertEquals((seen[0].payload as Record<string, unknown>).tag, "custom");
+});
+
+Deno.test("an empty tagsByType entry falls back instead of sending untagged", async () => {
+  const { context } = notifyContext({
+    ...GLOBAL_ARGS,
+    tagsByType: { failure: "" },
+  });
+  const { handler, seen } = capture(200);
+
+  await withMockedFetch(handler, async () => {
+    await model.methods.notify.execute({ ...ARGS, type: "failure" }, context);
+  });
+
+  assertEquals((seen[0].payload as Record<string, unknown>).tag, "homelab");
 });
