@@ -140,6 +140,14 @@ export const model = {
     "Send notifications through an Apprise API server, fanning out to Matrix, Discord, ntfy, email and 100+ other services",
   version: "2026.09.24.1",
   globalArguments: GlobalArgsSchema,
+  upgrades: [
+    {
+      toVersion: "2026.09.24.1",
+      description:
+        "Adds optional tagsByType; existing arguments are unchanged, so nothing to migrate",
+      upgradeAttributes: (old: Record<string, unknown>) => old,
+    },
+  ],
   resources: {
     "notification": {
       description:
