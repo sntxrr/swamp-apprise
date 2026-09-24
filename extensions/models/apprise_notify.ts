@@ -43,6 +43,17 @@ const GlobalArgsSchema = z.object({
   defaultTags: z.string().optional().describe(
     "Comma-separated tags applied when a notify call does not specify its own. Must match tags on the configured URLs or nothing is sent.",
   ),
+  // Routing by severity belongs here rather than on every workflow step: a new
+  // step that forgets its tags still lands in the right place, and a mapping
+  // change is one edit instead of one per step.
+  tagsByType: z.object({
+    info: z.string().optional(),
+    success: z.string().optional(),
+    warning: z.string().optional(),
+    failure: z.string().optional(),
+  }).optional().describe(
+    "Comma-separated tags per notification type, used when a notify call does not specify its own tags. Takes precedence over defaultTags; a type left unset falls back to defaultTags.",
+  ),
   timeoutMs: z.number().int().positive().default(10000).describe(
     "Abort the notification attempt after this long. Notifications should never hang a workflow.",
   ),
@@ -127,7 +138,7 @@ export const model = {
   type: "@sntxrr/apprise-notify",
   description:
     "Send notifications through an Apprise API server, fanning out to Matrix, Discord, ntfy, email and 100+ other services",
-  version: "2026.07.30.1",
+  version: "2026.09.24.1",
   globalArguments: GlobalArgsSchema,
   resources: {
     "notification": {
@@ -152,7 +163,7 @@ export const model = {
             "Severity. Most targets render this as a colour or icon.",
           ),
         tags: z.string().optional().describe(
-          "Comma-separated tags selecting which configured URLs to notify. Falls back to defaultTags.",
+          "Comma-separated tags selecting which configured URLs to notify. Falls back to tagsByType[type], then defaultTags.",
         ),
         format: z.enum(["text", "markdown", "html"]).default("text").describe(
           "Body format passed to Apprise",
@@ -181,7 +192,11 @@ export const model = {
         },
       ) => {
         const { globalArgs, logger } = context;
-        const tags = args.tags ?? globalArgs.defaultTags ?? null;
+        // Precedence: the step's own tags, then the per-type mapping, then the
+        // catch-all. An empty string counts as unset, so a mapping cannot
+        // accidentally send untagged (which notifies every URL on the key).
+        const tags = args.tags || globalArgs.tagsByType?.[args.type] ||
+          globalArgs.defaultTags || null;
 
         // Skipping is a first-class outcome, not an error: the common case is a
         // workflow step that runs every tick but should only speak up on change.
