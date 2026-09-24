@@ -271,3 +271,8 @@ Deno.test("an empty tagsByType entry falls back instead of sending untagged", as
 
   assertEquals((seen[0].payload as Record<string, unknown>).tag, "homelab");
 });
+
+Deno.test("the 2026.09.24.1 upgrade carries existing arguments over unchanged", () => {
+  const upgrade = model.upgrades.find((u) => u.toVersion === model.version);
+  assertEquals(upgrade?.upgradeAttributes({ ...GLOBAL_ARGS }), GLOBAL_ARGS);
+});
