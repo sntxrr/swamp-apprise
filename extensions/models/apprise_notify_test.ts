@@ -7,7 +7,7 @@ import {
 import {
   createModelTestContext,
   withMockedFetch,
-} from "jsr:@swamp-club/swamp-testing";
+} from "jsr:@swamp-club/swamp-testing@0.20260928.39";
 import { model } from "./apprise_notify.ts";
 
 type NotifyContext = Parameters<typeof model.methods.notify.execute>[1];
