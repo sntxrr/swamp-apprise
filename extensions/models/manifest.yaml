@@ -1,8 +1,9 @@
 manifestVersion: 1
 
 name: "@sntxrr/apprise-notify"
-version: "2026.09.24.1"
+version: "2026.10.14.1"
 description: "Send notifications through an Apprise API server, fanning out to Matrix, Discord, ntfy, email and 100+ other services"
+license: MIT
 repository: "https://github.com/sntxrr/swamp-apprise"
 
 models:
